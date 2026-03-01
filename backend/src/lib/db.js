@@ -10,4 +10,4 @@ export const connectDB = async ()=>{
 console.log("error inn connecting to mmongoDB",error)
 process.exit(1)
     }
-}
+} 

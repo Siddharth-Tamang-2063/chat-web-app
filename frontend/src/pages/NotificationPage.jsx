@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acceptFriendRequest, getFriendRequests } from "../lib/api";
-import { BellIcon, ClockIcon, MessageSquareIcon, UserCheckIcon } from "lucide-react";
+import { BellIcon, ClockIcon, CheckIcon, UserCheckIcon } from "lucide-react";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 
 const NotificationsPage = () => {
@@ -23,108 +23,146 @@ const NotificationsPage = () => {
   const acceptedRequests = friendRequests?.acceptedReqs || [];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="container mx-auto max-w-4xl space-y-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6">Notifications</h1>
+    <div className="min-h-screen bg-[#070711]">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-white">Notifications</h1>
+          <p className="text-white/40 text-sm mt-1">Stay updated with your connections</p>
+        </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <span className="loading loading-spinner loading-lg"></span>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="rounded-2xl border border-white/5 p-5 animate-pulse"
+                style={{ background: "rgba(255,255,255,0.03)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/10" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-white/10 rounded w-1/3" />
+                    <div className="h-2 bg-white/5 rounded w-1/2" />
+                  </div>
+                  <div className="w-20 h-8 bg-white/5 rounded-xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <>
-            {/* Incoming Friend Requests */}
-            {incomingRequests.length > 0 ? (
-              <section className="space-y-4">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <UserCheckIcon className="h-5 w-5 text-primary" />
-                  Friend Requests
-                  <span className="badge badge-primary ml-2">{incomingRequests.length}</span>
-                </h2>
+            {/* Incoming Requests */}
+            {incomingRequests.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <UserCheckIcon className="w-4 h-4 text-indigo-400" />
+                  <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">
+                    Friend Requests
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                    style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
+                    {incomingRequests.length}
+                  </span>
+                </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {incomingRequests.map((request) => (
                     <div
                       key={request._id}
-                      className="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
+                      className="rounded-2xl border border-white/5 p-4 transition-colors hover:border-white/10"
+                      style={{ background: "rgba(255,255,255,0.03)" }}
                     >
-                      <div className="card-body p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="avatar w-14 h-14 rounded-full bg-base-300">
-                              <img src={request.sender.profilePic} alt={request.sender.fullName} />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">{request.sender.fullName}</h3>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                <span className="badge badge-secondary badge-sm">
-                                  Country: {request.sender.nativeLanguage}
-                                </span>
-                                <span className="badge badge-outline badge-sm">
-                                  Language: {request.sender.learningLanguage}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => acceptRequestMutation(request._id)}
-                            disabled={isAccepting}
-                          >
-                            {isAccepting ? "Accepting..." : "Accept"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : (
-              <NoNotificationsFound message="No new friend requests." />
-            )}
-
-            {/* Accepted Requests */}
-            {acceptedRequests.length > 0 ? (
-              <section className="space-y-4">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <BellIcon className="h-5 w-5 text-success" />
-                  New Connections
-                </h2>
-
-                <div className="space-y-3">
-                  {acceptedRequests.map((notification) => (
-                    <div key={notification._id} className="card bg-base-200 shadow-sm">
-                      <div className="card-body p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="avatar mt-1 size-10 rounded-full">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 flex-shrink-0">
                             <img
-                              src={notification.recipient.profilePic}
-                              alt={notification.recipient.fullName}
+                              src={request.sender.profilePic}
+                              alt={request.sender.fullName}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.sender.fullName)}&background=6366f1&color=fff`;
+                              }}
                             />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{notification.recipient.fullName}</h3>
-                            <p className="text-sm my-1">
-                              {notification.recipient.fullName} accepted your friend request
-                            </p>
-                            <p className="text-xs flex items-center opacity-70">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              Recently
-                            </p>
-                          </div>
-                          <div className="badge badge-success">
-                            <MessageSquareIcon className="h-3 w-3 mr-1" />
-                            New Friend
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-white text-sm truncate">{request.sender.fullName}</h3>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <span className="px-2 py-0.5 rounded-md text-xs border border-violet-500/20 text-violet-400"
+                                style={{ background: "rgba(139,92,246,0.1)" }}>
+                                {request.sender.nativeLanguage}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md text-xs border border-cyan-500/20 text-cyan-400"
+                                style={{ background: "rgba(6,182,212,0.1)" }}>
+                                {request.sender.learningLanguage}
+                              </span>
+                            </div>
                           </div>
                         </div>
+
+                        <button
+                          onClick={() => acceptRequestMutation(request._id)}
+                          disabled={isAccepting}
+                          className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-60"
+                          style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", boxShadow: "0 0 20px rgba(99,102,241,0.2)" }}
+                        >
+                          <CheckIcon className="w-4 h-4" />
+                          Accept
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
-            ) : (
-              <NoNotificationsFound message="No new connections." />
+            )}
+
+            {/* Accepted connections */}
+            {acceptedRequests.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <BellIcon className="w-4 h-4 text-emerald-400" />
+                  <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">New Connections</h2>
+                </div>
+
+                <div className="space-y-2">
+                  {acceptedRequests.map((notification) => (
+                    <div
+                      key={notification._id}
+                      className="rounded-2xl border border-emerald-500/10 p-4"
+                      style={{ background: "rgba(16,185,129,0.05)" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 flex-shrink-0">
+                          <img
+                            src={notification.recipient.profilePic}
+                            alt={notification.recipient.fullName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(notification.recipient.fullName)}&background=10b981&color=fff`;
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white">
+                            <span className="font-semibold">{notification.recipient.fullName}</span>
+                            <span className="text-white/50"> accepted your friend request</span>
+                          </p>
+                          <p className="text-xs text-white/30 flex items-center gap-1 mt-0.5">
+                            <ClockIcon className="w-3 h-3" />
+                            Recently
+                          </p>
+                        </div>
+                        <span className="flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium text-emerald-400 border border-emerald-500/20"
+                          style={{ background: "rgba(16,185,129,0.1)" }}>
+                          Connected
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {incomingRequests.length === 0 && acceptedRequests.length === 0 && (
+              <NoNotificationsFound />
             )}
           </>
         )}

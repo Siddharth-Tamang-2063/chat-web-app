@@ -1,5 +1,12 @@
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 import express from "express";
 import "dotenv/config";
+// ... rest of your imports
+
+
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";

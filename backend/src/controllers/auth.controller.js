@@ -15,18 +15,17 @@ export async function signup(req, res) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already exists, please use a diffrent one" });
+      return res.status(400).json({ message: "Email already exists, please use a different one" });
     }
 
-    const idx = Math.floor(Math.random() * 100) + 1; // generate a num between 1-100
-    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+    const idx = Math.floor(Math.random() * 100) + 1;
+  const randomAvatar = `https://api.dicebear.com/7.x/avataaars/png?seed=${idx}`;
 
     const newUser = await User.create({
       email,
@@ -35,20 +34,6 @@ export async function signup(req, res) {
       profilePic: randomAvatar,
     });
 
-
-   try {
-    await upsertStreamUser(
-
-        {
-            id: newUser._id.toString(),
-            name: newUser.fullName,
-            image: newUser.profilePic || "",
-        }
-    );
-    console.log(`Stream user created for ${newUser._fullName}`)
-   } catch (error) {
-    console.log("Error creating Stream user :", error)
-   }
     try {
       await upsertStreamUser({
         id: newUser._id.toString(),
@@ -66,8 +51,8 @@ export async function signup(req, res) {
 
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true, // prevent XSS attacks,
-      sameSite: "strict", // prevent CSRF attacks
+      httpOnly: true,
+      sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
     });
 
@@ -98,8 +83,8 @@ export async function login(req, res) {
 
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      httpOnly: true, // prevent XSS attacks,
-      sameSite: "strict", // prevent CSRF attacks
+      httpOnly: true,
+      sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
     });
 
@@ -116,49 +101,45 @@ export function logout(req, res) {
 }
 
 export async function onboard(req, res) {
-    try {
-      const userId = req.user._id;
-  
-      const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
-  
-      if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
-        return res.status(400).json({
-          message: "All fields are required",
-          missingFields: [
-            !fullName && "fullName",
-            !bio && "bio",
-            !nativeLanguage && "Country",
-            !learningLanguage && "Language",
-            !location && "Number",
-          ].filter(Boolean),
-        });
-      }
-  
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
-        {
-          ...req.body,
-          isOnboarded: true,
-        },
-        { new: true }
-      );
-  
-      if (!updatedUser) return res.status(404).json({ message: "User not found" });
+  try {
+    const userId = req.user._id;
 
-     try {
-        await upsertStreamUser({
-            id: updatedUser._id.toString(),
-            name: updatedUser.fullName,
-            image: updatedUser.profilePic || "",
-          })
-     } catch (streamError) {
-        console.log("Error updating Stream user during onboarding:",streamError.message)
-        
-     }
-  
-      res.status(200).json({ success: true, user: updatedUser });
-    } catch (error) {
-      console.error("Onboarding error:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+    const { fullName, bio, nativeLanguage, learningLanguage, location } = req.body;
+
+    if (!fullName || !bio || !nativeLanguage || !learningLanguage || !location) {
+      return res.status(400).json({
+        message: "All fields are required",
+        missingFields: [
+          !fullName && "fullName",
+          !bio && "bio",
+          !nativeLanguage && "nativeLanguage",
+          !learningLanguage && "learningLanguage",
+          !location && "location",
+        ].filter(Boolean),
+      });
     }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { ...req.body, isOnboarded: true },
+      { new: true }
+    );
+
+    if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+    try {
+      await upsertStreamUser({
+        id: updatedUser._id.toString(),
+        name: updatedUser.fullName,
+        image: updatedUser.profilePic || "",
+      });
+    } catch (streamError) {
+      console.log("Error updating Stream user during onboarding:", streamError.message);
+    }
+
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error("Onboarding error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
+}

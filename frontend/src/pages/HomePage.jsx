@@ -1,20 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
 import {
   getOutgoingFriendReqs,
   getRecommendedUsers,
   getUserFriends,
   sendFriendRequest,
 } from "../lib/api.js";
-import { Link } from 'react-router';
-import { CheckCircleIcon, MapPinIcon, Phone, UserPlusIcon, UsersIcon } from 'lucide-react';
-import FriendCard, { getLanguageFlag } from '../components/FriendCard.jsx';
-import NoFriendsFound from '../components/NoFriendsFound.jsx';
-import { capitialize } from '../lib/util.js';
+import { Link } from "react-router";
+import { CheckCircleIcon, Phone, UserPlusIcon, UsersIcon, Search, MessageCircle } from "lucide-react";
+import FriendCard, { getLanguageFlag } from "../components/FriendCard.jsx";
+import NoFriendsFound from "../components/NoFriendsFound.jsx";
+
+const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 
 const HomePage = () => {
   const queryClient = useQueryClient();
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
+  const [search, setSearch] = useState("");
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
@@ -37,126 +39,191 @@ const HomePage = () => {
   });
 
   useEffect(() => {
-    const outgoingIds = new Set();
+    const ids = new Set();
     if (Array.isArray(outgoingFriendReqs)) {
-      outgoingFriendReqs.forEach((req) => {
-        outgoingIds.add(req.recipient._id);
-      });
+      outgoingFriendReqs.forEach((req) => ids.add(req.recipient._id));
     }
-    setOutgoingRequestsIds(outgoingIds);
+    setOutgoingRequestsIds(ids);
   }, [outgoingFriendReqs]);
 
+  const filteredUsers = Array.isArray(recommendedUsers)
+    ? recommendedUsers.filter(u =>
+        u.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+        u.nativeLanguage?.toLowerCase().includes(search.toLowerCase()) ||
+        u.learningLanguage?.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="container mx-auto space-y-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Your Friends</h2>
-          <Link to="/notifications" className="btn btn-outline btn-sm">
-            <UsersIcon className="mr-2 size-4" />
-            Friend Requests
-          </Link>
-        </div>
+    <div className="min-h-screen bg-base-100 text-base-content">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
 
-        {loadingFriends ? (
-          <div className="flex justify-center py-12">
-            <span className="loading loading-spinner loading-lg" />
-          </div>
-        ) : friends.length === 0 ? (
-          <NoFriendsFound />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {friends.map((friend) => (
-              <FriendCard key={friend._id} friend={friend} />
-            ))}
-          </div>
-        )}
-
+        {/* Friends Section */}
         <section>
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Meet New Friends</h2>
-                <p className="opacity-70">
-                  Discover new and intresting from worldwide
-                </p>
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-base-content">Your Friends</h2>
+              <p className="text-sm text-base-content/40 mt-0.5">{friends.length} connection{friends.length !== 1 ? "s" : ""}</p>
+            </div>
+            <Link
+              to="/notifications"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-base-content/60 hover:text-base-content border border-base-300 hover:border-base-content/20 bg-base-200 hover:bg-base-300 transition-all duration-200"
+            >
+              <UsersIcon className="w-4 h-4" />
+              Friend Requests
+            </Link>
+          </div>
+
+          {loadingFriends ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="rounded-2xl border border-base-300 bg-base-200 p-4 animate-pulse">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full bg-base-300" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-base-300 rounded w-3/4" />
+                      <div className="h-2 bg-base-300 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="h-8 bg-base-300 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          ) : friends.length === 0 ? (
+            <NoFriendsFound />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {friends.map((friend) => (
+                <FriendCard key={friend._id} friend={friend} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Discover Section */}
+        <section>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-base-content">Discover People</h2>
+              <p className="text-sm text-base-content/40 mt-0.5">Find language partners worldwide</p>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or language..."
+                className="pl-10 pr-4 py-2.5 rounded-xl text-sm bg-base-200 text-base-content placeholder:text-base-content/30 outline-none border border-base-300 focus:border-primary/50 w-full sm:w-64 transition-colors"
+              />
             </div>
           </div>
 
           {loadingUsers ? (
-            <div className="flex justify-center py-12">
-              <span className="loading loading-spinner loading-lg" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="rounded-2xl border border-base-300 bg-base-200 p-5 animate-pulse">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-14 h-14 rounded-full bg-base-300" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-base-300 rounded w-3/4" />
+                      <div className="h-3 bg-base-300 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="h-3 bg-base-300 rounded" />
+                    <div className="h-3 bg-base-300 rounded w-4/5" />
+                  </div>
+                  <div className="h-10 bg-base-300 rounded-xl" />
+                </div>
+              ))}
             </div>
-          ) : Array.isArray(recommendedUsers) && recommendedUsers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedUsers.map((user) => {
+          ) : filteredUsers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredUsers.map((user) => {
                 const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
 
                 return (
                   <div
                     key={user._id}
-                    className="card bg-base-200 hover:shadow-lg transition-all duration-300"
+                    className="rounded-2xl border border-base-300 bg-base-200 p-5 hover:bg-base-300 hover:-translate-y-0.5 transition-all duration-300"
                   >
-                    <div className="card-body p-5 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="avatar size-16 rounded-full">
-                          <img src={user.profilePic} alt={user.fullName} />
+                    {/* User info */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="relative">
+                        <div className="w-14 h-14 rounded-full overflow-hidden border border-base-300">
+                          <img
+                            src={user.profilePic}
+                            alt={user.fullName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=6366f1&color=fff`;
+                            }}
+                          />
                         </div>
-
-                        <div>
-                          <h3 className="font-semibold text-lg">{user.fullName}</h3>
-                          {user.location && (
-                            <div className="flex items-center text-xs opacity-70 mt-1">
-                              <Phone className="size-3 mr-1" />
-                              {user.location}
-                            </div>
-                          )}
-                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-base-200" />
                       </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="badge badge-secondary">
-                          {getLanguageFlag(user.nativeLanguage)}
-                          Country: {capitialize(user.nativeLanguage)}
-                        </span>
-                        <span className="badge badge-outline">
-                          
-                          Language: {capitalize(user.learningLanguage)}
-                        </span>
-                      </div>
-
-                      {user.bio && <p className="text-sm opacity-70">{user.bio}</p>}
-
-                      <button
-                        className={`btn w-full mt-2 ${
-                          hasRequestBeenSent ? "btn-disabled" : "btn-primary"
-                        }`}
-                        onClick={() => sendRequestMutation(user._id)}
-                        disabled={hasRequestBeenSent || isPending}
-                      >
-                        {hasRequestBeenSent ? (
-                          <>
-                            <CheckCircleIcon className="size-4 mr-2" />
-                            Request Sent
-                          </>
-                        ) : (
-                          <>
-                            <UserPlusIcon className="size-4 mr-2" />
-                            Send Friend Request
-                          </>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base-content truncate">{user.fullName}</h3>
+                        {user.location && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3 text-base-content/30" />
+                            <span className="text-xs text-base-content/40 truncate">{user.location}</span>
+                          </div>
                         )}
-                      </button>
+                      </div>
                     </div>
+
+                    {/* Language badges */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      <span className="badge badge-outline text-xs gap-1 text-violet-500 border-violet-500/30">
+                        {getLanguageFlag(user.nativeLanguage)}
+                        {capitalize(user.nativeLanguage)}
+                      </span>
+                      <span className="badge badge-outline text-xs gap-1 text-cyan-500 border-cyan-500/30">
+                        {getLanguageFlag(user.learningLanguage)}
+                        {capitalize(user.learningLanguage)}
+                      </span>
+                    </div>
+
+                    {/* Bio */}
+                    {user.bio && (
+                      <p className="text-xs text-base-content/40 mb-4 line-clamp-2 leading-relaxed">{user.bio}</p>
+                    )}
+
+                    {/* Action button */}
+                    <button
+                      onClick={() => !hasRequestBeenSent && sendRequestMutation(user._id)}
+                      disabled={hasRequestBeenSent || isPending}
+                      className={`w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 ${
+                        hasRequestBeenSent
+                          ? "bg-success/10 text-success border border-success/20 cursor-default"
+                          : "btn btn-primary"
+                      }`}
+                    >
+                      {hasRequestBeenSent ? (
+                        <>
+                          <CheckCircleIcon className="w-4 h-4" />
+                          Request Sent
+                        </>
+                      ) : (
+                        <>
+                          <UserPlusIcon className="w-4 h-4" />
+                          Connect
+                        </>
+                      )}
+                    </button>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="card bg-base-200 p-6 text-center">
-              <h3 className="font-semibold text-lg mb-2">No recommendations available</h3>
-              <p className="text-base-content opacity-70">
-                Check back later for new language partners!
-              </p>
+            <div className="text-center py-16 rounded-2xl border border-base-300 bg-base-200">
+              <MessageCircle className="w-10 h-10 text-base-content/20 mx-auto mb-3" />
+              <h3 className="font-semibold text-base-content/60">No matches found</h3>
+              <p className="text-sm text-base-content/30 mt-1">Try a different search term</p>
             </div>
           )}
         </section>
@@ -166,6 +233,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
