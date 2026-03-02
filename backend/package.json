@@ -13,8 +13,6 @@
   "description": "",
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "call": "file:..",
-    "chat-web-app-root": "file:..",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
