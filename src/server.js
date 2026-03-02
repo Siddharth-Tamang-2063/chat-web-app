@@ -1,50 +1,58 @@
-import dns from 'dns';
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 import express from "express";
-import "dotenv/config";
-// ... rest of your imports
-
-
-
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import path from "path";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+import dns from "dns";
 
-import authRoutes from "./routes/auth.route.js";
-import userRoutes from "./routes/user.route.js";
-import chatRoutes from "./routes/chat.route.js";
+// Import routes
+import authRoute from "./routes/auth.route.js";
+import userRoute from "./routes/user.route.js";
+import chatRoute from "./routes/chat.route.js";
 
-import { connectDB } from "./lib/db.js";
+// Set DNS to Google (8.8.8.8) for better resolution
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
 
-const __dirname = path.resolve();
-
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true, // allow frontend to send cookies
-  })
-);
-
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/chat", chatRoutes);
+// CORS Configuration
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+// MongoDB Connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected successfully");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1);
   });
-}
 
+// Routes
+app.use("/api/auth", authRoute);
+app.use("/api/users", userRoute);
+app.use("/api/chat", chatRoute);
+
+// Health check route
+app.get("/api/health", (req, res) => {
+  res.json({ status: "Server is running" });
+});
+
+// Start Server
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  connectDB();
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
