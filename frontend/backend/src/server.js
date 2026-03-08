@@ -24,9 +24,10 @@ app.use(cookieParser());
 
 // CORS Configuration
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://chat-web-app-4ay2.vercel.app",
+  "http://localhost:5173",  // Development
+  "https://chat-web-app-5w2c.vercel.app"  // Production
 ];
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
