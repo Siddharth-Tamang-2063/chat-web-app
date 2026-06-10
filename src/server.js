@@ -26,6 +26,7 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",
   "https://chat-web-app-4ay2.vercel.app",
+  "https://chatapp-6qu6.vercel.app",  
 ];
 app.use(cors({
   origin: (origin, callback) => {
